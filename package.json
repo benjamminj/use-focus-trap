@@ -40,7 +40,7 @@
       }
     }
   },
-  "name": "hooks",
+  "name": "@benjamminj/use-focus-trap",
   "author": "Ben Johnson",
   "module": "dist/hooks.esm.js",
   "size-limit": [
