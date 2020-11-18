@@ -1,15 +1,22 @@
 import { useEffect, useRef } from 'react';
 
-const focusableElementsSelector =
-  'a, button, input, textarea, select, details, [tabindex]:not([tabindex="-1"])';
+const focusableElementsSelector = `
+  a[href]:not(:disabled):not([tabindex="-1"]), 
+  button:not(:disabled):not([tabindex="-1"]), 
+  input:not(:disabled):not([tabindex="-1"]), 
+  textarea:not(:disabled):not([tabindex="-1"]), 
+  select:not(:disabled):not([tabindex="-1"]), 
+  details:not(:disabled):not([tabindex="-1"]), 
+  [tabindex]:not(:disabled):not([tabindex="-1"])
+`;
 
-// TODO: active/inactive boolean
-// TODO: return ref? or accept ref as input?
-export const useFocusTrap = <T extends HTMLElement = HTMLElement>() => {
+export const useFocusTrap = <T extends HTMLElement = HTMLElement>(
+  enabled = true
+) => {
   const ref = useRef<T>(null);
 
   useEffect(() => {
-    if (!ref.current) return;
+    if (!ref.current || !enabled) return;
 
     const handleFocus = () => {
       const focusedElementInsideContainer = ref.current?.querySelector(
@@ -32,7 +39,7 @@ export const useFocusTrap = <T extends HTMLElement = HTMLElement>() => {
     return () => {
       window.removeEventListener('focusin', handleFocus);
     };
-  }, []);
+  }, [enabled]);
 
   return ref;
 };
