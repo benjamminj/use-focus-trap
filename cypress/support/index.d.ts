@@ -4,6 +4,6 @@ declare namespace Cypress {
      * Custom command to select DOM element by data-cy attribute.
      * @example cy.dataCy('greeting')
      */
-    tab(): Chainable<Element>;
+    tab(options?: { shift?: boolean }): Chainable<Element>;
   }
 }

@@ -89,6 +89,160 @@ const ReturnFocusOnUnmount = () => {
   );
 };
 
+const MultipleTrapsNoTriggerRefs = () => {
+  const [firstEnabled, setFirstEnabled] = React.useState(false);
+  const [secondEnabled, setSecondEnabled] = React.useState(false);
+
+  return (
+    <div>
+      <h1>Sibling traps</h1>
+      <Trap enabled={firstEnabled}>
+        <h2>First is {firstEnabled ? 'on' : 'off'}</h2>
+        <button onClick={() => setFirstEnabled(x => !x)}>toggle first</button>
+        <button>inside first</button>
+        <button onClick={() => setSecondEnabled(true)}>toggle second on</button>
+      </Trap>
+      <Trap enabled={secondEnabled}>
+        <h2>Second is {secondEnabled ? 'on' : 'off'}</h2>
+        <button>second #1</button>
+        <button>second #2</button>
+        <button onClick={() => setSecondEnabled(false)}>
+          toggle second off
+        </button>
+      </Trap>
+      <button>outside</button>
+    </div>
+  );
+};
+
+const MultipleTrapsWithTriggerRefs = () => {
+  const [firstEnabled, setFirstEnabled] = React.useState(false);
+  const [secondEnabled, setSecondEnabled] = React.useState(false);
+  const secondTriggerRef = React.useRef<HTMLButtonElement>(null);
+  return (
+    <div>
+      <h1>Sibling traps</h1>
+      <Trap enabled={firstEnabled}>
+        <h2>First is {firstEnabled ? 'on' : 'off'}</h2>
+        <button onClick={() => setFirstEnabled(x => !x)}>toggle first</button>
+        <button>inside first</button>
+        <button onClick={() => setSecondEnabled(true)} ref={secondTriggerRef}>
+          toggle second on
+        </button>
+      </Trap>
+      <Trap enabled={secondEnabled} trigger={secondTriggerRef}>
+        <h2>Second is {secondEnabled ? 'on' : 'off'}</h2>
+        <button>second #1</button>
+        <button>second #2</button>
+        <button onClick={() => setSecondEnabled(false)}>
+          toggle second off
+        </button>
+      </Trap>
+      <button>outside</button>
+    </div>
+  );
+};
+
+const NestedTraps = () => {
+  const [firstEnabled, setFirstEnabled] = React.useState(false);
+  const [secondEnabled, setSecondEnabled] = React.useState(false);
+  const secondTriggerRef = React.useRef<HTMLButtonElement>(null);
+
+  return (
+    <div>
+      <h1>Nested traps</h1>
+      <Trap enabled={firstEnabled}>
+        <h2>Outer trap is {firstEnabled ? 'on' : 'off'}</h2>
+        <button onClick={() => setFirstEnabled(true)}>enable outer</button>
+        <button onClick={() => setSecondEnabled(true)} ref={secondTriggerRef}>
+          enable inner
+        </button>
+
+        {secondEnabled && (
+          <Trap trigger={secondTriggerRef}>
+            <h3>Inner trap is {secondEnabled ? 'on' : 'off'}</h3>
+            <button>inner #1</button>
+            <button
+              onClick={() => {
+                setSecondEnabled(false);
+              }}
+            >
+              close inner
+            </button>
+          </Trap>
+        )}
+
+        <button onClick={() => setFirstEnabled(false)}>close outer</button>
+      </Trap>
+      <button>outside</button>
+    </div>
+  );
+};
+
+const AddingNodes = () => {
+  const [showHidden, setShowHidden] = React.useState(false);
+  return (
+    <div>
+      <Trap>
+        <button>first</button>
+        <button onClick={() => setShowHidden(true)}>show hidden items</button>
+        {showHidden && (
+          <>
+            <button>hidden #1</button>
+            <button>hidden #2</button>
+          </>
+        )}
+      </Trap>
+      <button>outside</button>
+    </div>
+  );
+};
+
+const RemovingNodes = () => {
+  const [showHidden, setShowHidden] = React.useState(true);
+  return (
+    <div>
+      <Trap>
+        <button>first</button>
+        <button onClick={() => setShowHidden(false)}>
+          remove hidden items
+        </button>
+        {showHidden && (
+          <>
+            <button>hidden #1</button>
+            <button>hidden #2</button>
+          </>
+        )}
+      </Trap>
+      <button>outside</button>
+    </div>
+  );
+};
+
+const ControlledAutoFocus = () => {
+  const [enabled, setEnabled] = React.useState(false);
+  const ref = useFocusTrap<HTMLDivElement>({ enabled, autoFocus: true });
+  return (
+    <>
+      <button onClick={() => setEnabled(true)}>enable</button>
+      <div ref={ref}>
+        <button>first</button>
+        <button>second</button>
+      </div>
+    </>
+  );
+};
+
+const UncontrolledAutoFocus = () => {
+  const ref = useFocusTrap<HTMLDivElement>({ autoFocus: true });
+  return (
+    <div ref={ref}>
+      <button>first</button>
+      <button>second</button>
+    </div>
+  );
+};
+
 const App = () => {
   return (
     <Router>
@@ -212,9 +366,7 @@ const App = () => {
             )}
           </Controlled>
         </Route>
-        {/* <Route path="/controlled-outside" exact>
-          <Trap></Trap>
-        </Route> */}
+
         <Route path="/return-focus-to-trigger" exact>
           <ReturnFocusToTrigger />
         </Route>
@@ -228,6 +380,42 @@ const App = () => {
             <button>inside #1</button>
             <button>inside #2</button>
           </Trap>
+        </Route>
+
+        <Route path="/loop-backwards" exact>
+          <Trap>
+            <button>inside #1</button>
+            <button>inside #2</button>
+            <button>inside #3</button>
+          </Trap>
+        </Route>
+
+        <Route path="/multiple-traps-no-trigger-refs" exact>
+          <MultipleTrapsNoTriggerRefs />
+        </Route>
+
+        <Route path="/multiple-traps-trigger-refs" exact>
+          <MultipleTrapsWithTriggerRefs />
+        </Route>
+
+        <Route path="/nested-traps" exact>
+          <NestedTraps />
+        </Route>
+
+        <Route path="/adding-nodes" exact>
+          <AddingNodes />
+        </Route>
+
+        <Route path="/removing-nodes" exact>
+          <RemovingNodes />
+        </Route>
+
+        <Route path="/auto-focus/controlled" exact>
+          <ControlledAutoFocus />
+        </Route>
+
+        <Route path="/auto-focus/uncontrolled" exact>
+          <UncontrolledAutoFocus />
         </Route>
       </Switch>
     </Router>

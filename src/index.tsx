@@ -13,48 +13,70 @@ const focusableElementsSelector = `
 interface UseFocusTrapArguments<T> {
   enabled?: boolean;
   trigger?: T;
+  autoFocus?: boolean;
 }
 
-type HTMLRefValue = HTMLElement | null | undefined;
+type HTMLRefValue = HTMLElement | null;
 type HTMLRef = MutableRefObject<HTMLRefValue>;
 
-let currentTrap: HTMLRefValue = undefined;
+let currentTrapStack: HTMLRefValue[] = [];
 
 export const useFocusTrap = <
   T extends HTMLElement = HTMLElement,
   K extends HTMLRef = HTMLRef
->({ enabled: controlledEnabled, trigger }: UseFocusTrapArguments<K> = {}) => {
+>({
+  enabled: controlledEnabled,
+  trigger,
+  autoFocus,
+}: UseFocusTrapArguments<K> = {}) => {
   const enabled = controlledEnabled === undefined ? true : controlledEnabled;
   const ref = useRef<T>(null);
 
+  const getCurrentTrap = () => currentTrapStack[currentTrapStack.length - 1];
+  const getIsCurrentStack = (el = ref.current) => el === getCurrentTrap();
+  const refocusTrigger = () => trigger?.current?.focus();
+
   useEffect(() => {
-    if (!enabled && trigger?.current) {
-      trigger.current.focus();
+    const isCurrentStack = getIsCurrentStack();
+    if (!enabled && isCurrentStack) {
+      refocusTrigger();
     }
   }, [enabled]);
 
   useEffect(() => {
-    if (!ref.current || !enabled) return;
+    const currentElement = ref.current;
+    if (!currentElement || !enabled) return;
 
-    currentTrap = ref.current;
-
-    const allFocusable = ref.current.querySelectorAll(
-      focusableElementsSelector
-    );
-
-    const firstFocusable = allFocusable[0];
-    const lastFocusable = allFocusable[allFocusable.length - 1];
+    currentTrapStack.push(ref.current);
 
     const handleKeydown = (ev: KeyboardEvent) => {
+      const allFocusable = currentElement.querySelectorAll(
+        focusableElementsSelector
+      );
+
+      const firstFocusable = allFocusable[0];
+      const lastFocusable = allFocusable[allFocusable.length - 1];
+
+      if (getIsCurrentStack() === false) return;
+
       if (ev.key !== 'Tab') return;
 
-      if (ev.shiftKey && document.activeElement === firstFocusable) {
-        (lastFocusable as HTMLElement).focus();
-      } else if (document.activeElement === lastFocusable) {
+      const isFocusedWithin = currentElement?.querySelector(':focus-within');
+
+      if (!isFocusedWithin) {
         (firstFocusable as HTMLElement).focus();
+        ev.preventDefault();
       }
 
-      ev.preventDefault();
+      if (ev.shiftKey) {
+        if (document.activeElement === firstFocusable) {
+          (lastFocusable as HTMLElement).focus();
+          ev.preventDefault();
+        }
+      } else if (document.activeElement === lastFocusable) {
+        (firstFocusable as HTMLElement).focus();
+        ev.preventDefault();
+      }
     };
 
     window.addEventListener('keydown', handleKeydown);
@@ -62,15 +84,31 @@ export const useFocusTrap = <
     return () => {
       window.removeEventListener('keydown', handleKeydown);
 
-      if (trigger?.current && controlledEnabled === undefined) {
-        trigger.current.focus();
+      if (controlledEnabled === undefined) {
+        refocusTrigger();
       }
 
-      if (currentTrap === ref.current) {
-        console.log('WUUUUT');
+      if (getIsCurrentStack(currentElement)) {
+        currentTrapStack.pop();
+        refocusTrigger();
       }
     };
   }, [enabled, controlledEnabled]);
+
+  // Right now it's important that this happens as the last effect, so that the
+  // the stack is initialized before we try to auto-focus
+  useEffect(() => {
+    const isCurrentStack = getIsCurrentStack();
+
+    if (enabled && autoFocus && isCurrentStack && ref.current) {
+      const allFocusable = ref.current.querySelectorAll(
+        focusableElementsSelector
+      );
+
+      const firstFocusable = allFocusable[0];
+      (firstFocusable as HTMLElement).focus();
+    }
+  }, [enabled, autoFocus]);
 
   return ref;
 };
