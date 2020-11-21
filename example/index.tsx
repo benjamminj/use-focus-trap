@@ -4,8 +4,17 @@ import * as ReactDOM from 'react-dom';
 import { useFocusTrap } from '../.';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 
-const Trap = (props: { children: React.ReactNode; enabled?: boolean }) => {
-  const ref = useFocusTrap<HTMLDivElement>(props.enabled);
+type ElementRef = React.MutableRefObject<HTMLElement | null>;
+
+const Trap = <T extends ElementRef = ElementRef>(props: {
+  children: React.ReactNode;
+  enabled?: boolean;
+  trigger?: T;
+}) => {
+  const ref = useFocusTrap<HTMLDivElement>({
+    enabled: props.enabled,
+    trigger: props.trigger,
+  });
 
   return <div ref={ref}>{props.children}</div>;
 };
@@ -27,8 +36,57 @@ const Basic = () => {
 const Controlled = ({ children, initialState = true }) => {
   const state = React.useState(true);
 
-  console.log(state[0]);
   return children(state);
+};
+
+const ReturnFocusToTrigger = () => {
+  const [enabled, setEnabled] = React.useState(false);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+
+  const focusTrapRef = useFocusTrap<HTMLDivElement>({
+    enabled,
+    trigger: triggerRef,
+  });
+
+  return (
+    <div>
+      <h1>Trap is {enabled ? 'on' : 'off'}</h1>
+
+      <button ref={triggerRef} onClick={() => setEnabled(true)}>
+        trigger on
+      </button>
+
+      <div ref={focusTrapRef}>
+        <button>inside #1</button>
+        <button>inside #2</button>
+        <button onClick={() => setEnabled(false)}>trigger off</button>
+      </div>
+      <button>outside</button>
+    </div>
+  );
+};
+
+const ReturnFocusOnUnmount = () => {
+  const [enabled, setEnabled] = React.useState(false);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+
+  return (
+    <div>
+      <h1>Trap is {enabled ? 'on' : 'off'}</h1>
+
+      <button ref={triggerRef} onClick={() => setEnabled(e => !e)}>
+        toggle
+      </button>
+
+      {enabled && (
+        <Trap trigger={triggerRef}>
+          <button>inside #1</button>
+          <button>inside #2</button>
+          <button onClick={() => setEnabled(false)}>close</button>
+        </Trap>
+      )}
+    </div>
+  );
 };
 
 const App = () => {
@@ -154,8 +212,22 @@ const App = () => {
             )}
           </Controlled>
         </Route>
-        <Route path="/controlled-outside" exact>
+        {/* <Route path="/controlled-outside" exact>
           <Trap></Trap>
+        </Route> */}
+        <Route path="/return-focus-to-trigger" exact>
+          <ReturnFocusToTrigger />
+        </Route>
+
+        <Route path="/return-focus-on-unmount" exact>
+          <ReturnFocusOnUnmount />
+        </Route>
+
+        <Route path="/last-dom-element" exact>
+          <Trap>
+            <button>inside #1</button>
+            <button>inside #2</button>
+          </Trap>
         </Route>
       </Switch>
     </Router>

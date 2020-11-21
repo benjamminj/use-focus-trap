@@ -14,6 +14,8 @@
     "start": "tsdx watch",
     "build": "tsdx build",
     "test": "tsdx test --passWithNoTests",
+    "e2e": "yarn cypress open",
+    "e2e:run": "yarn cypress run",
     "lint": "tsdx lint",
     "prepare": "tsdx build",
     "size": "size-limit",
@@ -42,14 +44,14 @@
   },
   "name": "@benjamminj/use-focus-trap",
   "author": "Ben Johnson",
-  "module": "dist/hooks.esm.js",
+  "module": "dist/use-focus-trap.esm.js",
   "size-limit": [
     {
-      "path": "dist/hooks.cjs.production.min.js",
+      "path": "dist/use-focus-trap.cjs.production.min.js",
       "limit": "1 KB"
     },
     {
-      "path": "dist/hooks.esm.js",
+      "path": "dist/use-focus-trap.esm.js",
       "limit": "1 KB"
     }
   ],

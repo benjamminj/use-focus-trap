@@ -114,4 +114,46 @@ describe('useFocusTrap', () => {
     tabThruTrapContent();
     cy.focused().should('contain', 'outside');
   });
+
+  it('should return focus to the attached trigger when closing the trap', () => {
+    cy.visit('/return-focus-to-trigger');
+
+    cy.contains('trigger on').click();
+    cy.focused().tab();
+    cy.focused().should('contain', 'inside #1');
+    cy.focused().tab();
+    cy.focused().should('contain', 'inside #2');
+    cy.focused().tab();
+    cy.focused().should('contain', 'trigger off');
+    cy.focused().click();
+    cy.focused().should('contain', 'trigger on');
+  });
+
+  it('should return focus to the attached trigger then the trap unmounts', () => {
+    cy.visit('/return-focus-on-unmount');
+
+    cy.contains('toggle').click();
+    cy.focused().tab();
+    cy.focused().should('contain', 'inside #1');
+    cy.focused().tab();
+    cy.focused().should('contain', 'inside #2');
+    cy.focused().tab();
+    cy.focused().should('contain', 'close');
+    cy.focused().click();
+    cy.focused().should('contain', 'toggle');
+  });
+
+  it('should trap focus when the trap contains the last element in the DOM', () => {
+    cy.visit('/last-dom-element');
+    cy.get('body').tab();
+    cy.focused().should('contain', 'inside #1');
+    cy.focused().tab();
+    cy.focused().should('contain', 'inside #2');
+    cy.focused().tab();
+    cy.focused().should('contain', 'inside #1');
+  });
+
+  it.skip('should handle multiple focus traps');
+  it.skip('should handle nested focus traps');
+  it.skip('should loop to last element if tabbing backward through the trap');
 });

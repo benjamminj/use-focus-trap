@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { MutableRefObject, useEffect, useRef } from 'react';
 
 const focusableElementsSelector = `
   a[href]:not(:disabled):not([tabindex="-1"]), 
@@ -10,36 +10,67 @@ const focusableElementsSelector = `
   [tabindex]:not(:disabled):not([tabindex="-1"])
 `;
 
-export const useFocusTrap = <T extends HTMLElement = HTMLElement>(
-  enabled = true
-) => {
+interface UseFocusTrapArguments<T> {
+  enabled?: boolean;
+  trigger?: T;
+}
+
+type HTMLRefValue = HTMLElement | null | undefined;
+type HTMLRef = MutableRefObject<HTMLRefValue>;
+
+let currentTrap: HTMLRefValue = undefined;
+
+export const useFocusTrap = <
+  T extends HTMLElement = HTMLElement,
+  K extends HTMLRef = HTMLRef
+>({ enabled: controlledEnabled, trigger }: UseFocusTrapArguments<K> = {}) => {
+  const enabled = controlledEnabled === undefined ? true : controlledEnabled;
   const ref = useRef<T>(null);
+
+  useEffect(() => {
+    if (!enabled && trigger?.current) {
+      trigger.current.focus();
+    }
+  }, [enabled]);
 
   useEffect(() => {
     if (!ref.current || !enabled) return;
 
-    const handleFocus = () => {
-      const focusedElementInsideContainer = ref.current?.querySelector(
-        ':focus-within'
-      );
+    currentTrap = ref.current;
 
-      if (focusedElementInsideContainer) return;
+    const allFocusable = ref.current.querySelectorAll(
+      focusableElementsSelector
+    );
 
-      const firstFocusableElement = ref.current?.querySelector(
-        focusableElementsSelector
-      );
+    const firstFocusable = allFocusable[0];
+    const lastFocusable = allFocusable[allFocusable.length - 1];
 
-      if (firstFocusableElement) {
-        (firstFocusableElement as HTMLElement).focus();
+    const handleKeydown = (ev: KeyboardEvent) => {
+      if (ev.key !== 'Tab') return;
+
+      if (ev.shiftKey && document.activeElement === firstFocusable) {
+        (lastFocusable as HTMLElement).focus();
+      } else if (document.activeElement === lastFocusable) {
+        (firstFocusable as HTMLElement).focus();
       }
+
+      ev.preventDefault();
     };
 
-    window.addEventListener('focusin', handleFocus);
+    window.addEventListener('keydown', handleKeydown);
 
     return () => {
-      window.removeEventListener('focusin', handleFocus);
+      window.removeEventListener('keydown', handleKeydown);
+
+      if (trigger?.current && controlledEnabled === undefined) {
+        trigger.current.focus();
+      }
+
+      if (currentTrap === ref.current) {
+        console.log('WUUUUT');
+      }
     };
-  }, [enabled]);
+  }, [enabled, controlledEnabled]);
 
   return ref;
 };
