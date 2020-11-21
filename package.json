@@ -1,5 +1,6 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.4",
+  "private": false,
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -19,6 +20,7 @@
     "lint": "tsdx lint",
     "prepare": "tsdx build",
     "size": "size-limit",
+    "size:fresh": "rm -rf dist && yarn build && yarn size",
     "analyze": "size-limit --why"
   },
   "peerDependencies": {
