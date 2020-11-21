@@ -1,4 +1,4 @@
-import { MutableRefObject, useEffect, useRef } from 'react';
+import { MutableRefObject, useCallback, useEffect, useRef } from 'react';
 
 const focusableElementsSelector = `
   a[href]:not(:disabled):not([tabindex="-1"]), 
@@ -20,6 +20,7 @@ type HTMLRefValue = HTMLElement | null;
 type HTMLRef = MutableRefObject<HTMLRefValue>;
 
 let currentTrapStack: HTMLRefValue[] = [];
+const getCurrentTrap = () => currentTrapStack[currentTrapStack.length - 1];
 
 export const useFocusTrap = <
   T extends HTMLElement = HTMLElement,
@@ -32,16 +33,21 @@ export const useFocusTrap = <
   const enabled = controlledEnabled === undefined ? true : controlledEnabled;
   const ref = useRef<T>(null);
 
-  const getCurrentTrap = () => currentTrapStack[currentTrapStack.length - 1];
-  const getIsCurrentStack = (el = ref.current) => el === getCurrentTrap();
-  const refocusTrigger = () => trigger?.current?.focus();
+  const getIsCurrentStack = useCallback(
+    (el = ref.current) => el === getCurrentTrap(),
+    []
+  );
+
+  const refocusTrigger = useCallback(() => trigger?.current?.focus(), [
+    trigger,
+  ]);
 
   useEffect(() => {
     const isCurrentStack = getIsCurrentStack();
     if (!enabled && isCurrentStack) {
       refocusTrigger();
     }
-  }, [enabled]);
+  }, [enabled, getIsCurrentStack, refocusTrigger]);
 
   useEffect(() => {
     const currentElement = ref.current;
@@ -93,7 +99,7 @@ export const useFocusTrap = <
         refocusTrigger();
       }
     };
-  }, [enabled, controlledEnabled]);
+  }, [enabled, controlledEnabled, refocusTrigger, getIsCurrentStack]);
 
   // Right now it's important that this happens as the last effect, so that the
   // the stack is initialized before we try to auto-focus
@@ -108,7 +114,7 @@ export const useFocusTrap = <
       const firstFocusable = allFocusable[0];
       (firstFocusable as HTMLElement).focus();
     }
-  }, [enabled, autoFocus]);
+  }, [enabled, autoFocus, getIsCurrentStack]);
 
   return ref;
 };
