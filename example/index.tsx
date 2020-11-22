@@ -219,9 +219,9 @@ const RemovingNodes = () => {
   );
 };
 
-const ControlledAutoFocus = () => {
+const ControlledAutoFocusOff = () => {
   const [enabled, setEnabled] = React.useState(false);
-  const ref = useFocusTrap<HTMLDivElement>({ enabled, autoFocus: true });
+  const ref = useFocusTrap<HTMLDivElement>({ enabled, autoFocus: false });
   return (
     <>
       <button onClick={() => setEnabled(true)}>enable</button>
@@ -233,12 +233,15 @@ const ControlledAutoFocus = () => {
   );
 };
 
-const UncontrolledAutoFocus = () => {
-  const ref = useFocusTrap<HTMLDivElement>({ autoFocus: true });
+const UncontrolledAutoFocusOff = () => {
+  const ref = useFocusTrap<HTMLDivElement>({ autoFocus: false });
   return (
-    <div ref={ref}>
-      <button>first</button>
-      <button>second</button>
+    <div>
+      <button>outer</button>
+      <div ref={ref}>
+        <button>first</button>
+        <button>second</button>
+      </div>
     </div>
   );
 };
@@ -410,12 +413,12 @@ const App = () => {
           <RemovingNodes />
         </Route>
 
-        <Route path="/auto-focus/controlled" exact>
-          <ControlledAutoFocus />
+        <Route path="/disable-auto-focus/controlled" exact>
+          <ControlledAutoFocusOff />
         </Route>
 
-        <Route path="/auto-focus/uncontrolled" exact>
-          <UncontrolledAutoFocus />
+        <Route path="/disable-auto-focus/uncontrolled" exact>
+          <UncontrolledAutoFocusOff />
         </Route>
       </Switch>
     </Router>

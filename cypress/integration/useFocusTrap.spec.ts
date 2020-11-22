@@ -125,7 +125,8 @@ describe('useFocusTrap', () => {
     cy.visit('/return-focus-to-trigger');
 
     cy.contains('trigger on').click();
-    cy.focused().tab();
+
+    // The first element inside of the trap should automatically be focused
     cy.focused().should('contain', 'inside #1');
     cy.focused().tab();
     cy.focused().should('contain', 'inside #2');
@@ -139,7 +140,6 @@ describe('useFocusTrap', () => {
     cy.visit('/return-focus-on-unmount');
 
     cy.contains('toggle').click();
-    cy.focused().tab();
     cy.focused().should('contain', 'inside #1');
     cy.focused().tab();
     cy.focused().should('contain', 'inside #2');
@@ -181,9 +181,8 @@ describe('useFocusTrap', () => {
       .focus()
       .click();
 
-    // Another tab should now enter the second trap
+    // Focus should now enter the second trap
     // Tab all the way around this trap to make sure it's working
-    cy.focused().tab();
     cy.focused().should('contain', 'second #1');
     tabTimes(2);
     cy.focused().should('contain', 'toggle second off');
@@ -225,9 +224,8 @@ describe('useFocusTrap', () => {
       .focus()
       .click();
 
-    // Another tab should now enter the second trap
+    // Focus should now enter the second trap
     // Tab all the way around this trap to make sure it's working
-    cy.focused().tab();
     cy.focused().should('contain', 'second #1');
     tabTimes(3);
     cy.focused().should('contain', 'second #1');
@@ -242,6 +240,7 @@ describe('useFocusTrap', () => {
 
   it('should loop to last element if tabbing backward through the trap', () => {
     cy.visit('/loop-backwards');
+    cy.get('body').tab();
     cy.contains('inside #2').focus();
     cy.focused().tab({ shift: true });
     cy.focused().should('contain', 'inside #1');
@@ -259,7 +258,7 @@ describe('useFocusTrap', () => {
     tabTimes(3);
     cy.focused().should('contain', 'enable outer');
     cy.contains('enable inner').click();
-    cy.focused().tab();
+    // Focus will automatically enter the inner trap
     cy.focused().should('contain', 'inner #1');
     tabTimes(2);
     cy.focused().should('contain', 'inner #1');
@@ -295,14 +294,16 @@ describe('useFocusTrap', () => {
     cy.focused().should('contain', 'first');
   });
 
-  it('should allow auto-focusing on first tabbable element (uncontrolled)', () => {
-    cy.visit('/auto-focus/controlled');
+  // TODO: inverse auto-focus
+  it('should allow auto-focusing on first tabbable element (controlled)', () => {
+    cy.visit('/disable-auto-focus/controlled');
     cy.contains('enable').click();
-    cy.focused().should('contain', 'first');
+    cy.focused().should('contain', 'enable');
   });
 
-  it('should allow auto-focusing on first tabbable element (controlled)', () => {
-    cy.visit('/auto-focus/uncontrolled');
-    cy.focused().should('contain', 'first');
+  // TODO: inverse auto-focus
+  it('should allow auto-focusing on first tabbable element (uncontrolled)', () => {
+    cy.visit('/disable-auto-focus/uncontrolled');
+    cy.focused().should('not.contain', 'first');
   });
 });

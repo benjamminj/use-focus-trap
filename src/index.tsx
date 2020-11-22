@@ -22,13 +22,27 @@ type HTMLRef = MutableRefObject<HTMLRefValue>;
 let currentTrapStack: HTMLRefValue[] = [];
 const getCurrentTrap = () => currentTrapStack[currentTrapStack.length - 1];
 
+const getFocusableEdges = (el: HTMLElement): HTMLElement[] => {
+  const allFocusable = el.querySelectorAll(focusableElementsSelector);
+
+  const firstFocusable = allFocusable[0];
+  const lastFocusable = allFocusable[allFocusable.length - 1];
+
+  return [firstFocusable, lastFocusable] as HTMLElement[];
+};
+
+const focusElement = (el: HTMLElement, ev?: Event) => {
+  el.focus();
+  if (ev) ev.preventDefault();
+};
+
 export const useFocusTrap = <
   T extends HTMLElement = HTMLElement,
   K extends HTMLRef = HTMLRef
 >({
   enabled: controlledEnabled,
   trigger,
-  autoFocus,
+  autoFocus = true,
 }: UseFocusTrapArguments<K> = {}) => {
   const enabled = controlledEnabled === undefined ? true : controlledEnabled;
   const ref = useRef<T>(null);
@@ -42,6 +56,8 @@ export const useFocusTrap = <
     trigger,
   ]);
 
+  // Refocus back on the trigger that opened the focus trap
+  // when the focus trap closes.
   useEffect(() => {
     const isCurrentStack = getIsCurrentStack();
     if (!enabled && isCurrentStack) {
@@ -56,32 +72,23 @@ export const useFocusTrap = <
     currentTrapStack.push(ref.current);
 
     const handleKeydown = (ev: KeyboardEvent) => {
-      const allFocusable = currentElement.querySelectorAll(
-        focusableElementsSelector
-      );
-
-      const firstFocusable = allFocusable[0];
-      const lastFocusable = allFocusable[allFocusable.length - 1];
-
       if (getIsCurrentStack() === false) return;
 
       if (ev.key !== 'Tab') return;
 
       const isFocusedWithin = currentElement?.querySelector(':focus-within');
+      const [firstFocusable, lastFocusable] = getFocusableEdges(currentElement);
 
       if (!isFocusedWithin) {
-        (firstFocusable as HTMLElement).focus();
-        ev.preventDefault();
+        focusElement(firstFocusable as HTMLElement, ev);
       }
 
       if (ev.shiftKey) {
         if (document.activeElement === firstFocusable) {
-          (lastFocusable as HTMLElement).focus();
-          ev.preventDefault();
+          focusElement(lastFocusable as HTMLElement, ev);
         }
       } else if (document.activeElement === lastFocusable) {
-        (firstFocusable as HTMLElement).focus();
-        ev.preventDefault();
+        focusElement(firstFocusable as HTMLElement, ev);
       }
     };
 
@@ -107,11 +114,7 @@ export const useFocusTrap = <
     const isCurrentStack = getIsCurrentStack();
 
     if (enabled && autoFocus && isCurrentStack && ref.current) {
-      const allFocusable = ref.current.querySelectorAll(
-        focusableElementsSelector
-      );
-
-      const firstFocusable = allFocusable[0];
+      const [firstFocusable] = getFocusableEdges(ref.current);
       (firstFocusable as HTMLElement).focus();
     }
   }, [enabled, autoFocus, getIsCurrentStack]);
