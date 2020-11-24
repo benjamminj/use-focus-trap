@@ -1,4 +1,4 @@
-import { MutableRefObject, useCallback, useEffect, useRef } from 'react';
+import { MutableRefObject, useEffect, useRef } from 'react';
 
 const focusableElementsSelector = `
   a[href]:not(:disabled):not([tabindex="-1"]), 
@@ -22,8 +22,11 @@ type HTMLRef = MutableRefObject<HTMLRefValue>;
 let currentTrapStack: HTMLRefValue[] = [];
 const getCurrentTrap = () => currentTrapStack[currentTrapStack.length - 1];
 
-const getFocusableEdges = (el: HTMLElement): HTMLElement[] => {
-  const allFocusable = el.querySelectorAll(focusableElementsSelector);
+/**
+ * Find the _first_ and the _last_ focusable elements within a given container element
+ */
+const getFocusableEdges = (containerEl: HTMLElement): HTMLElement[] => {
+  const allFocusable = containerEl.querySelectorAll(focusableElementsSelector);
 
   const firstFocusable = allFocusable[0];
   const lastFocusable = allFocusable[allFocusable.length - 1];
@@ -31,11 +34,21 @@ const getFocusableEdges = (el: HTMLElement): HTMLElement[] => {
   return [firstFocusable, lastFocusable] as HTMLElement[];
 };
 
-const focusElement = (el: HTMLElement, ev?: Event) => {
-  el.focus();
+/**
+ * Manually focus on a given DOM node. If an event is passed in, prevents the
+ * default behavior of the event.
+ */
+const focusElement = (el?: HTMLElement | null, ev?: Event) => {
+  el?.focus();
   if (ev) ev.preventDefault();
 };
 
+// TODO: docssss
+const getIsCurrentStack = (el: unknown) => el === getCurrentTrap();
+
+/**
+ * @todo description
+ */
 export const useFocusTrap = <
   T extends HTMLElement = HTMLElement,
   K extends HTMLRef = HTMLRef
@@ -47,23 +60,14 @@ export const useFocusTrap = <
   const enabled = controlledEnabled === undefined ? true : controlledEnabled;
   const ref = useRef<T>(null);
 
-  const getIsCurrentStack = useCallback(
-    (el = ref.current) => el === getCurrentTrap(),
-    []
-  );
-
-  const refocusTrigger = useCallback(() => trigger?.current?.focus(), [
-    trigger,
-  ]);
-
   // Refocus back on the trigger that opened the focus trap
   // when the focus trap closes.
   useEffect(() => {
-    const isCurrentStack = getIsCurrentStack();
+    const isCurrentStack = getIsCurrentStack(ref.current);
     if (!enabled && isCurrentStack) {
-      refocusTrigger();
+      focusElement(trigger?.current);
     }
-  }, [enabled, getIsCurrentStack, refocusTrigger]);
+  }, [enabled, getIsCurrentStack]);
 
   useEffect(() => {
     const currentElement = ref.current;
@@ -72,7 +76,7 @@ export const useFocusTrap = <
     currentTrapStack.push(ref.current);
 
     const handleKeydown = (ev: KeyboardEvent) => {
-      if (getIsCurrentStack() === false) return;
+      if (getIsCurrentStack(ref.current) === false) return;
 
       if (ev.key !== 'Tab') return;
 
@@ -80,15 +84,15 @@ export const useFocusTrap = <
       const [firstFocusable, lastFocusable] = getFocusableEdges(currentElement);
 
       if (!isFocusedWithin) {
-        focusElement(firstFocusable as HTMLElement, ev);
+        focusElement(firstFocusable, ev);
       }
 
       if (ev.shiftKey) {
         if (document.activeElement === firstFocusable) {
-          focusElement(lastFocusable as HTMLElement, ev);
+          focusElement(lastFocusable, ev);
         }
       } else if (document.activeElement === lastFocusable) {
-        focusElement(firstFocusable as HTMLElement, ev);
+        focusElement(firstFocusable, ev);
       }
     };
 
@@ -98,24 +102,24 @@ export const useFocusTrap = <
       window.removeEventListener('keydown', handleKeydown);
 
       if (controlledEnabled === undefined) {
-        refocusTrigger();
+        focusElement(trigger?.current);
       }
 
       if (getIsCurrentStack(currentElement)) {
         currentTrapStack.pop();
-        refocusTrigger();
+        focusElement(trigger?.current);
       }
     };
-  }, [enabled, controlledEnabled, refocusTrigger, getIsCurrentStack]);
+  }, [enabled, controlledEnabled, getIsCurrentStack]);
 
   // Right now it's important that this happens as the last effect, so that the
   // the stack is initialized before we try to auto-focus
   useEffect(() => {
-    const isCurrentStack = getIsCurrentStack();
+    const isCurrentStack = getIsCurrentStack(ref.current);
 
     if (enabled && autoFocus && isCurrentStack && ref.current) {
       const [firstFocusable] = getFocusableEdges(ref.current);
-      (firstFocusable as HTMLElement).focus();
+      focusElement(firstFocusable);
     }
   }, [enabled, autoFocus, getIsCurrentStack]);
 
