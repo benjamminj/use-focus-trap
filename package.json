@@ -15,6 +15,7 @@
     "start": "tsdx watch",
     "build": "tsdx build",
     "test": "tsdx test --passWithNoTests",
+    "examples": "(cd example && yarn build && yarn start)",
     "e2e": "yarn cypress open",
     "e2e:run": "yarn cypress run",
     "lint": "tsdx lint",

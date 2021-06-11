@@ -19,6 +19,22 @@ interface UseFocusTrapArguments<T> {
 type HTMLRefValue = HTMLElement | null;
 type HTMLRef = MutableRefObject<HTMLRefValue>;
 
+/**
+ * In some edge cases, an app can contain multiple focus traps nested within each
+ * other. In these scenarios it's important to track the parent-child relationships
+ * between the focus traps.
+ *
+ * At the moment this is a single stack reused across all focus trap hooks.  Using this
+ * last-in-first-out approach allows each focus trap to do the following:
+ *
+ * A) Begin trapping focus when it is added to the stack
+ * B) Stop trapping focus when it is removed from the stack
+ * C) Know whether it is currently the highest-priority focus trap (i.e. the last
+ *    in the stack) or whether it should stop listening to events.
+ *
+ * @todo This may need to be refactored or used differently in the React hook when
+ * concurrent mode launches, since the state lives outside of the React tree.
+ */
 let currentTrapStack: HTMLRefValue[] = [];
 const getCurrentTrap = () => currentTrapStack[currentTrapStack.length - 1];
 
@@ -43,11 +59,14 @@ const focusElement = (el?: HTMLElement | null, ev?: Event) => {
   if (ev) ev.preventDefault();
 };
 
-// TODO: docssss
+/**
+ * Returns whether the element is within the current focus trap "stack"
+ */
 const getIsCurrentStack = (el: unknown) => el === getCurrentTrap();
 
 /**
- * @todo description
+ * Creates a focus trap and returns a React `ref` that can be used to apply
+ * the focus trap to a DOM element.
  */
 export const useFocusTrap = <
   T extends HTMLElement = HTMLElement,
@@ -64,6 +83,7 @@ export const useFocusTrap = <
   // when the focus trap closes.
   useEffect(() => {
     const isCurrentStack = getIsCurrentStack(ref.current);
+
     if (!enabled && isCurrentStack) {
       focusElement(trigger?.current);
     }
@@ -106,7 +126,10 @@ export const useFocusTrap = <
       }
 
       if (getIsCurrentStack(currentElement)) {
+        // As part of cleanup, remove the focus trap from the stack of traps
+        // This will allow any parent focus traps to begin trapping focus again.
         currentTrapStack.pop();
+        // Return focus to the element that opened the focus trap.
         focusElement(trigger?.current);
       }
     };
