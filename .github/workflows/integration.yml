@@ -1,0 +1,25 @@
+name: Integration
+on: [push]
+jobs:
+  build:
+    name: Run integration tests in Cypress
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.x'
+
+      - name: Install deps and build (with cache)
+        uses: bahmutov/npm-install@v1
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Test (E2E)
+        run: yarn ci
