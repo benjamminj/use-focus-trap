@@ -1,4 +1,4 @@
-describe('useFocusTrap', () => {
+describe('vanilla', () => {
   const tabTimes = (times: number) => {
     const range = Array.from({ length: times }, (_, i) => i + 1);
     cy.wrap(range).each(() => {
@@ -7,7 +7,7 @@ describe('useFocusTrap', () => {
   };
 
   it('should return focus to the first focusable element', () => {
-    cy.visit('/');
+    cy.visit('/vanilla/basic');
 
     cy.get('body').tab();
     tabTimes(2);
@@ -19,7 +19,7 @@ describe('useFocusTrap', () => {
   });
 
   it('should properly handle input elements', () => {
-    cy.visit('/elements/input');
+    cy.visit('/vanilla/elements/input');
     cy.get('body').tab();
     cy.focused().should('have.id', '1');
     cy.focused().tab();
@@ -29,7 +29,7 @@ describe('useFocusTrap', () => {
   });
 
   it('should properly handle select elements', () => {
-    cy.visit('/elements/select');
+    cy.visit('/vanilla/elements/select');
     cy.get('body').tab();
     cy.focused().should('have.id', 'number');
     cy.focused().tab();
@@ -39,7 +39,7 @@ describe('useFocusTrap', () => {
   });
 
   it('should properly handle textarea elements', () => {
-    cy.visit('/elements/textarea');
+    cy.visit('/vanilla/elements/textarea');
     cy.get('body').tab();
     cy.focused().should('have.id', '1');
     cy.focused().tab();
@@ -49,7 +49,7 @@ describe('useFocusTrap', () => {
   });
 
   it('should properly handle anchor elements', () => {
-    cy.visit('/elements/anchor');
+    cy.visit('/vanilla/elements/anchor');
     cy.get('body').tab();
     cy.focused().should('contain', 'google');
     cy.focused().tab();
@@ -59,7 +59,7 @@ describe('useFocusTrap', () => {
   });
 
   it('should skip anchor elements w/o an href', () => {
-    cy.visit('/elements/anchor-no-href');
+    cy.visit('/vanilla/elements/anchor-no-href');
     cy.get('body').tab();
     cy.focused().should('contain', 'google');
     cy.focused().tab();
@@ -69,7 +69,7 @@ describe('useFocusTrap', () => {
   });
 
   it('should handle tabindex=0', () => {
-    cy.visit('/elements/zero-tabindex');
+    cy.visit('/vanilla/elements/zero-tabindex');
     cy.get('body').tab();
     cy.focused().should('have.id', '1');
     cy.focused().tab();
@@ -79,7 +79,7 @@ describe('useFocusTrap', () => {
   });
 
   it('should skip tabindex=-1', () => {
-    cy.visit('/elements/negative-tabindex');
+    cy.visit('/vanilla/elements/negative-tabindex');
     cy.get('body').tab();
     cy.focused().should('have.id', '2');
     cy.focused().tab();
@@ -89,7 +89,7 @@ describe('useFocusTrap', () => {
   });
 
   it('should skip disabled elements', () => {
-    cy.visit('/elements/disabled');
+    cy.visit('/vanilla/elements/disabled');
     cy.get('body').tab();
     cy.focused().should('have.id', '2');
     cy.focused().tab();
@@ -99,7 +99,7 @@ describe('useFocusTrap', () => {
   });
 
   it('should allow manually controlling whether the trap is on/off', () => {
-    cy.visit('/controlled');
+    cy.visit('/vanilla/controlled');
 
     const tabThruTrapContent = () => {
       cy.get('body').tab();
@@ -115,14 +115,13 @@ describe('useFocusTrap', () => {
     cy.focused().should('contain', '1');
 
     cy.contains('toggle').click();
-    cy.contains('Focus trap is off').should('exist');
 
     tabThruTrapContent();
     cy.focused().should('contain', 'outside');
   });
 
   it('should return focus to the attached trigger when closing the trap', () => {
-    cy.visit('/return-focus-to-trigger');
+    cy.visit('/vanilla/return-focus-to-trigger');
 
     cy.contains('trigger on').click();
 
@@ -136,23 +135,8 @@ describe('useFocusTrap', () => {
     cy.focused().should('contain', 'trigger on');
   });
 
-  // TODO: add comment, this one is React-only since we need to manage lifecycle
-  // in the DOM. In vanilla you'd just call `disable` manually to clean things up
-  it('should return focus to the attached trigger then the trap unmounts', () => {
-    cy.visit('/return-focus-on-unmount');
-
-    cy.contains('toggle').click();
-    cy.focused().should('contain', 'inside #1');
-    cy.focused().tab();
-    cy.focused().should('contain', 'inside #2');
-    cy.focused().tab();
-    cy.focused().should('contain', 'close');
-    cy.focused().click();
-    cy.focused().should('contain', 'toggle');
-  });
-
   it('should trap focus when the trap contains the last element in the DOM', () => {
-    cy.visit('/last-dom-element');
+    cy.visit('/vanilla/last-dom-element');
     cy.get('body').tab();
     cy.focused().should('contain', 'inside #1');
     cy.focused().tab();
@@ -162,21 +146,17 @@ describe('useFocusTrap', () => {
   });
 
   it('should handle multiple focus traps without trigger refs', () => {
-    cy.visit('/multiple-traps-no-trigger-refs');
-
-    cy.contains('First is off').should('exist');
-    cy.contains('Second is off').should('exist');
+    cy.visit('/vanilla/multiple-traps-no-trigger-refs');
 
     // Navigate thru the first focus trap, turn it on.
     cy.get('body').tab();
     cy.focused().click();
-    cy.contains('First is on').should('exist');
 
     // Now that the first trap is on, tab thru it to make sure it's working
     tabTimes(2);
     cy.focused().should('contain', 'toggle second on');
-    cy.focused().tab();
-    cy.focused().should('contain', 'toggle first');
+    tabTimes(2);
+    cy.focused().should('contain', 'toggle first on');
 
     // Toggle the second trap on
     cy.contains('toggle second on')
@@ -193,33 +173,32 @@ describe('useFocusTrap', () => {
 
     // Now turn the second trap off, the first should still be on
     cy.contains('toggle second off').click();
-    cy.contains('Second is off').should('exist');
-    cy.contains('First is on').should('exist');
 
     // Tab again, and we should be back in the first trap
     cy.focused().tab();
-    cy.focused().should('contain', 'toggle first');
-    tabTimes(3);
-    cy.focused().should('contain', 'toggle first');
-    cy.focused().click();
-    tabTimes(3);
+    cy.focused().should('contain', 'toggle first on');
+    tabTimes(4);
+    cy.focused().should('contain', 'toggle first on');
+
+    // Turn the first trap off, and tab into the second trap's content now
+    // that both traps are off.
+    cy.contains('toggle first off')
+      .focus()
+      .click();
+    cy.focused().tab();
     cy.focused().should('contain', 'second #1');
   });
 
   it('should handle multiple focus traps and return focus to the appropriate trigger', () => {
-    cy.visit('/multiple-traps-trigger-refs');
-
-    cy.contains('First is off').should('exist');
-    cy.contains('Second is off').should('exist');
+    cy.visit('/vanilla/multiple-traps-trigger-refs');
 
     // Navigate thru the first focus trap, turn it on.
     cy.get('body').tab();
     cy.focused().click();
-    cy.contains('First is on').should('exist');
 
     // Now that the first trap is on, tab thru it to make sure it's working
-    tabTimes(3);
-    cy.focused().should('contain', 'toggle first');
+    tabTimes(4);
+    cy.focused().should('contain', 'toggle first on');
 
     // Toggle the second trap on
     cy.contains('toggle second on')
@@ -234,14 +213,14 @@ describe('useFocusTrap', () => {
 
     // Now turn the second trap off, the first should still be on
     cy.contains('toggle second off').click();
-    cy.contains('Second is off').should('exist');
-    cy.contains('First is on').should('exist');
 
+    // The focus should be returned to the second trap's trigger element, within the
+    // first trap.
     cy.focused().should('contain', 'toggle second on');
   });
 
   it('should loop to last element if tabbing backward through the trap', () => {
-    cy.visit('/loop-backwards');
+    cy.visit('/vanilla/loop-backwards');
     cy.get('body').tab();
     cy.contains('inside #2').focus();
     cy.focused().tab({ shift: true });
@@ -251,12 +230,11 @@ describe('useFocusTrap', () => {
   });
 
   it('should handle nested focus traps', () => {
-    cy.visit('/nested-traps');
+    cy.visit('/vanilla/nested-traps');
     cy.get('body').tab();
     cy.focused()
       .should('contain', 'enable outer')
       .click();
-    cy.contains('Outer trap is on').should('exist');
     tabTimes(3);
     cy.focused().should('contain', 'enable outer');
     cy.contains('enable inner').click();
@@ -271,7 +249,7 @@ describe('useFocusTrap', () => {
   });
 
   it('should handle additions from the focusable content', () => {
-    cy.visit('/adding-nodes');
+    cy.visit('/vanilla/adding-nodes');
     cy.get('body').tab();
     tabTimes(2);
     cy.focused().should('contain', 'first');
@@ -285,7 +263,7 @@ describe('useFocusTrap', () => {
   });
 
   it('should handle removals from the focusable content', () => {
-    cy.visit('/removing-nodes');
+    cy.visit('/vanilla/removing-nodes');
     cy.get('body').tab();
     tabTimes(2);
     cy.focused().should('contain', 'hidden #1');
@@ -296,16 +274,9 @@ describe('useFocusTrap', () => {
     cy.focused().should('contain', 'first');
   });
 
-  // TODO: inverse auto-focus
   it('should allow disabling auto-focus on first tabbable element (controlled)', () => {
-    cy.visit('/disable-auto-focus/controlled');
+    cy.visit('/vanilla/disable-auto-focus/controlled');
     cy.contains('enable').click();
     cy.focused().should('contain', 'enable');
-  });
-
-  // TODO: inverse auto-focus
-  it('should allow disabling auto-focus on first tabbable element (uncontrolled)', () => {
-    cy.visit('/disable-auto-focus/uncontrolled');
-    cy.focused().should('not.contain', 'first');
   });
 });
