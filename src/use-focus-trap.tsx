@@ -87,7 +87,7 @@ export const useFocusTrap = <
     if (!enabled && isCurrentStack) {
       focusElement(trigger?.current);
     }
-  }, [enabled, getIsCurrentStack]);
+  }, [enabled]);
 
   useEffect(() => {
     const currentElement = ref.current;
@@ -133,7 +133,7 @@ export const useFocusTrap = <
         focusElement(trigger?.current);
       }
     };
-  }, [enabled, controlledEnabled, getIsCurrentStack]);
+  }, [enabled, controlledEnabled]);
 
   // Right now it's important that this happens as the last effect, so that the
   // the stack is initialized before we try to auto-focus
@@ -144,7 +144,7 @@ export const useFocusTrap = <
       const [firstFocusable] = getFocusableEdges(ref.current);
       focusElement(firstFocusable);
     }
-  }, [enabled, autoFocus, getIsCurrentStack]);
+  }, [enabled, autoFocus]);
 
   return ref;
 };
