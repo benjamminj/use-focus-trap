@@ -3,6 +3,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { useFocusTrap } from '../.';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
+import { VanillaRouter } from './routes/vanilla';
 
 type ElementRef = React.MutableRefObject<HTMLElement | null>;
 
@@ -419,6 +420,10 @@ const App = () => {
 
         <Route path="/disable-auto-focus/uncontrolled" exact>
           <UncontrolledAutoFocusOff />
+        </Route>
+
+        <Route path="/vanilla">
+          <VanillaRouter />
         </Route>
       </Switch>
     </Router>
